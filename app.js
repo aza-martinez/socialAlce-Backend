@@ -5,6 +5,7 @@ let bodyParser = require ('body-parser');
 let app = express();
 
 const users = require('./Routes/users');
+const complaints = require('./Routes/complaints');
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -17,6 +18,6 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use('/api', [users]);
+app.use('/api', [users, complaints]);
 
 module.exports = app;
