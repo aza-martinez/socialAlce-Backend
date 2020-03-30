@@ -3,13 +3,15 @@
 let mongoose = require('mongoose');
 let Schema = mongoose.Schema;
 
-let ComplaintSchema = Schema({
-    user: {type: Schema.ObjectId, ref: 'User'},
+let ComplaintsSchema = Schema({
+    user: String,
     description: String,
-    invoice: String,
     justification: String,
+    dateCreated: Date,
+    dateIncidence: String,
     image: String,
-    status: String
+    status: String,
+    invoice: Number
 }, { versionKey: false });
 
-module.exports = mongoose.model('Complaint', ComplaintSchema)
+module.exports = mongoose.model('Complaint', ComplaintsSchema)

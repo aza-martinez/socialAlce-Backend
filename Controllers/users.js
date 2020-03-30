@@ -1,6 +1,3 @@
-
-
-
 'Use Strict'
 let validator = require('validator');
 let User = require('../Models/users');
@@ -8,6 +5,7 @@ let cript = require('bcrypt-nodejs');
 let jwt = require ('../Middlewares/jwt');
 let fs = require ('fs');
 let path = require('path');
+var moment = require('moment-timezone');
 let mongoosePaginate = require('mongoose-pagination');
 
 var controller = {
@@ -41,17 +39,21 @@ login: async(req, res) => {
     })
 },
 
-save: async(req, res) => {
+save: async(req, res) =>{
 var params = req.body;
 let user = new User();
-
     user.name = params.name;
     user.last_name = params.last_name;
     user.nick = params.nick;
     user.email = params.email;
+    user.birthday = params.birthday;
+    user.status = 'ACTIVE';
     user.role = 'ROLE_USER';
     user.image = null;
-
+    let fecha = new Date();
+    let dateMX = moment(fecha).tz("America/Mexico_City");
+    user.dateCreated = dateMX._d;
+    let nickUser = params.email;
     User.find({ $or: [
         {email: user.email.toLowerCase()},
         {nick: user.nick.toLowerCase()}
@@ -65,7 +67,31 @@ let user = new User();
                 user.save((error, userStored) => {
                     if (error) return res.status(500).send();
                     if(userStored){
-                        res.status(200).send({user: userStored});
+                        if(req.files){
+                            let file_path = req.files.image.path;
+                            let file_split = file_path.split('\\');
+                            let  file_name = file_split[2];
+                            let ext_split = file_name.split('\.');
+                            let file_ext = ext_split[1];
+                            console.log(nickUser);
+                            console.log(file_name);
+                            if(file_ext == 'png' || file_ext == 'PNG' || file_ext == 'jpg' || file_ext == 'jpeg' || file_ext == 'gif'){
+                                User.findOneAndUpdate({email: nickUser}, {image: file_name}, {new: true}, (err, userStored) =>{
+                                    if(err) return res.status(500).send();
+                                    if(!userStored) return res.status(404).send();
+                                    res.status(200).send({user: userStored});
+                                });
+                            }else{
+                                return removeFilesOfUpload(res, file_path, 'Extensión No Valida');
+                            }
+                        }else{
+                            return res.status(200).send({message: 'No Seleccionaste Archivos'});
+                        }
+                        function removeFilesOfUpload(res, file_path, message){
+                            fs.unlink(file_path, (err) => {
+                                return res.status(200).send({message: message});
+                            });
+                        }
                     }else{
                         res.status(400).send();
                     }
@@ -98,7 +124,7 @@ update: async(req, res) => {
     let idUser = req.params.idUser;
     let update = req.body;
     delete update.password;
-    if(idUser != req.user.sub){
+    if(req.user.role != 'ROLE_ADMIN' && idUser != req.user.sub){
         return res.status(500).send('NO TIENE PERMISOS');
     }
     User.findByIdAndUpdate(idUser, update, {new:true}, (err, userUpdate) => {
@@ -169,6 +195,13 @@ loginUser: async(req, res) => {
             pages: Math.ceil(total/itemsPerPage)
         });
     });
+},
+
+listUser: async(req, res) => {
+        req.user.sub =  undefined;
+        req.user.iat = undefined;
+        req.user.exp = undefined;
+        return res.status(200).send(req.user);
 },
 
 list: async(req, res) => {

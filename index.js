@@ -8,5 +8,5 @@ mongoose.Promise = global.Promise;
 mongoose.connect('mongodb+srv://srendon:20141530@cluster0-x8phq.azure.mongodb.net/socialGA', {useUnifiedTopology: true , useNewUrlParser: true})
     .then(() => {
         app.listen(port,() =>{});
-        console.log("Conectado A Social Network GA En El Puerto: " + port);
+        console.log("Conectado A socialGA En El Puerto: " + port);
     }).catch(error => console.log(error));

@@ -8,9 +8,12 @@ let UserSchema = Schema({
     last_name: String,
     nick: String,
     email: String,
+    birthday: String,
+    dateCreated: Date,
     password: String,
     role: String,
-    image: String
+    image: String,
+    status: String
 }, { versionKey: false });
 
 module.exports = mongoose.model('User', UserSchema)
