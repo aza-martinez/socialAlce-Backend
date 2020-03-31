@@ -40,6 +40,10 @@ login: async(req, res) => {
 },
 
 save: async(req, res) =>{
+let idUser = req.params.idUser;
+if(req.user.role != 'ROLE_ADMIN'){
+return res.status(500).send('NO TIENE PERMISOS');
+}
 var params = req.body;
 let user = new User();
     user.name = params.name;
@@ -47,8 +51,8 @@ let user = new User();
     user.nick = params.nick;
     user.email = params.email;
     user.birthday = params.birthday;
-    user.status = 'ACTIVE';
-    user.role = 'ROLE_USER';
+    user.status = true;
+    user.role = params.role;
     user.image = null;
     let fecha = new Date();
     let dateMX = moment(fecha).tz("America/Mexico_City");
@@ -103,6 +107,9 @@ let user = new User();
 
 search: async(req, res) => {
     let idUser = req.params.idUser;
+if(req.user.role != 'ROLE_ADMIN' && idUser != req.user.sub){
+return res.status(500).send('NO TIENE PERMISOS');
+}
     User.findById(idUser, (err, userFind) => {
     })
         .sort([
@@ -122,12 +129,25 @@ search: async(req, res) => {
 
 update: async(req, res) => {
     let idUser = req.params.idUser;
+if(req.user.role != 'ROLE_ADMIN' && idUser != req.user.sub){
+return res.status(500).send('NO TIENE PERMISOS');
+}
     let update = req.body;
     delete update.password;
-    if(req.user.role != 'ROLE_ADMIN' && idUser != req.user.sub){
-        return res.status(500).send('NO TIENE PERMISOS');
-    }
     User.findByIdAndUpdate(idUser, update, {new:true}, (err, userUpdate) => {
+        if(err) return res.status(500).send(err);
+        if(!userUpdate) return res.status(404).send();
+        return res.status(200).send({user: userUpdate});
+    })
+},
+
+delete: async(req, res) => {
+    let idUser = req.params.idUser;
+if(req.user.role != 'ROLE_ADMIN' && idUser != req.user.sub){
+return res.status(500).send('NO TIENE PERMISOS');
+}
+    let statusDesactive = false;
+    User.findByIdAndUpdate(idUser, {status: statusDesactive}, {new:true}, (err, userUpdate) => {
         if(err) return res.status(500).send(err);
         if(!userUpdate) return res.status(404).send();
         return res.status(200).send({user: userUpdate});
@@ -136,6 +156,9 @@ update: async(req, res) => {
 
 upload: async(req, res) => {
     let idUser = req.params.idUser;
+    if(req.user.role != 'ROLE_ADMIN' && idUser != req.user.sub){
+        return res.status(500).send('NO TIENE PERMISOS');
+    }
     if(req.files){
         console.log(req.files);
         let file_path = req.files.image.path;

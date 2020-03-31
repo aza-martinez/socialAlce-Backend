@@ -13,6 +13,7 @@ router.get('/user/search/:idUser', auth.ensureAuth, UsersController.search);
 router.post('/user/save/', [auth.ensureAuth, uploadImage], UsersController.save);
 router.post('/user/login/', UsersController.login);
 router.put('/user/update/:idUser', auth.ensureAuth, UsersController.update);
+router.put('/user/delete/:idUser', auth.ensureAuth, UsersController.delete);
 router.post('/user/upload/:idUser', [auth.ensureAuth, uploadImage], UsersController.upload);
 router.get('/user/getImage/:imageFile', UsersController.getImageFile);
 

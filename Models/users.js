@@ -11,7 +11,7 @@ let UserSchema = Schema({
     birthday: String,
     dateCreated: Date,
     password: String,
-    role: String,
+    role: Boolean,
     image: String,
     status: String
 }, { versionKey: false });
