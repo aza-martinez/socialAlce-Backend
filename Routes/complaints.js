@@ -4,10 +4,10 @@ let ComplaintsController = require('../Controllers/complaints');
 let router = express.Router();
 let auth = require('../Middlewares/auth');
 let multipart = require('connect-multiparty');
-let uploadImage = multipart({uploadDir: './uploads/complaints'});
+var multipartMiddleware = multipart();
 
 router.get('/complaints/list/', auth.ensureAuth, ComplaintsController.list);
-router.post('/complaint/save/', [auth.ensureAuth, uploadImage], ComplaintsController.save);
+router.post('/complaint/save/', [auth.ensureAuth, multipartMiddleware], ComplaintsController.save);
 
 //router.get('/suggestions/search/:idUser', auth.ensureAuth, SuggestionsController.search);
 //router.put('/user/update/:idUser', auth.ensureAuth, SuggestionsController.update);

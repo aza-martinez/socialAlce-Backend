@@ -7,7 +7,13 @@ let jwt = require ('../Middlewares/jwt');
 let fs = require ('fs');
 let path = require('path');
 var moment = require('moment-timezone');
-let mongoosePaginate = require('mongoose-pagination');
+let mongoosePaginate = require('mongoose-pagination');var azure =  require('azure-storage');
+
+const KEY_STORAGE = 'qxqCXxt8jH5QceYUPcECi45udcsdUlM9glFz/qwHmdvGRudsywFRoY1KNQex1gLlB6nCKvFiAM3rGK6+nQPqbg==';
+const STORAGE_ACCOUNT = 'socialalcestorage';
+const STORAGE_CONTAINER = 'complaints';
+const URL_BASE_STORAGE = 'https://socialalcestorage.blob.core.windows.net/complaints';
+
 
 var controller = {
     save: async(req, res) =>{
@@ -32,16 +38,36 @@ var controller = {
                             if (error) return res.status(500).send();
                             if(complaintStored){
                                 if(req.files){
-                                    let file_path = req.files.image.path;
-                                    let file_split = file_path.split('\\');
-                                    let  file_name = file_split[2];
-                                    let ext_split = file_name.split('\.');
-                                    let file_ext = ext_split[1];
+                                    var file_path = req.files.image.path;
+                                    var file_name = req.files.image.originalFilename;
+                                    var extension_split = file_name.split('\.');
+                                    var file_ext = extension_split[1];
+
+                                    var rutaAzure = URL_BASE_STORAGE+'/'+file_name
+                                    const blobService = azure.createBlobService(STORAGE_ACCOUNT, KEY_STORAGE);
+                                    let fileStorage = null;
+                                    const startDate = new Date();
+                                    const expiryDate = new Date(startDate);
+                                    const sharedAccessPolicy = {
+                                        AccessPolicy: {
+                                        Permissions: azure.BlobUtilities.SharedAccessPermissions.READ,
+                                        start: startDate,
+                                        Expiry: azure.date.minutesFromNow(20)
+                                        }
+                                    };
+                                    blobService.createBlockBlobFromLocalFile(STORAGE_CONTAINER, file_name , file_path, async (e, result, req) => {
+                                        if (e) {
+                                            console.log('no se guardo...')
+                                            return;
+                                        }
+                                        const token = blobService.generateSharedAccessSignature(STORAGE_CONTAINER, result.name, sharedAccessPolicy);
+                                        const fileURLStorage = blobService.getUrl(STORAGE_CONTAINER, result.name, token, true);
+                                        request(fileURLStorage, { encoding: null }, (error, response, body) => {})
+                                    })
                                     if(file_ext == 'png' || file_ext == 'PNG' || file_ext == 'jpg' || file_ext == 'jpeg' || file_ext == 'gif'){
-                                        Complaint.findOneAndUpdate({invoice: last_invoice}, {image: file_name}, {new: true}, (err, complaintStored) =>{
+                                        Complaint.findOneAndUpdate({invoice: last_invoice}, {image: rutaAzure}, {new: true}, (err, complaintStored) =>{
                                             if(err) return res.status(500).send();
                                             if(!complaintStored) return res.status(404).send();
-                                            
                                             res.status(200).send({user: complaintStored});
                                         });
                                     }else{

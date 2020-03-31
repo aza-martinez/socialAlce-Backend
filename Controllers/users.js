@@ -7,6 +7,12 @@ let fs = require ('fs');
 let path = require('path');
 var moment = require('moment-timezone');
 let mongoosePaginate = require('mongoose-pagination');
+var azure =  require('azure-storage');
+
+const KEY_STORAGE = 'qxqCXxt8jH5QceYUPcECi45udcsdUlM9glFz/qwHmdvGRudsywFRoY1KNQex1gLlB6nCKvFiAM3rGK6+nQPqbg==';
+const STORAGE_ACCOUNT = 'socialalcestorage';
+const STORAGE_CONTAINER = 'users';
+const URL_BASE_STORAGE = 'https://socialalcestorage.blob.core.windows.net/users';
 
 var controller = {
 login: async(req, res) => {
@@ -72,19 +78,49 @@ let user = new User();
                     if (error) return res.status(500).send();
                     if(userStored){
                         if(req.files){
-                            let file_path = req.files.image.path;
-                            let file_split = file_path.split('\\');
-                            let  file_name = file_split[2];
-                            let ext_split = file_name.split('\.');
-                            let file_ext = ext_split[1];
-                            console.log(nickUser);
-                            console.log(file_name);
+                            var file_path = req.files.image.path;
+                            var file_name = req.files.image.originalFilename;
+                            var extension_split = file_name.split('\.');
+                            var file_ext = extension_split[1];
+
+                            var rutaAzure = URL_BASE_STORAGE+'/'+file_name
+                            const blobService = azure.createBlobService(STORAGE_ACCOUNT, KEY_STORAGE);
+                            let fileStorage = null;
+                            const startDate = new Date();
+                            const expiryDate = new Date(startDate);
+                            const sharedAccessPolicy = {
+                                AccessPolicy: {
+                                Permissions: azure.BlobUtilities.SharedAccessPermissions.READ,
+                                start: startDate,
+                                Expiry: azure.date.minutesFromNow(20)
+                                }
+                            };
+                            blobService.createBlockBlobFromLocalFile(STORAGE_CONTAINER, file_name , file_path, async (e, result, req) => {
+                                if (e) {
+                                    console.log('no se guardo...')
+                                    return;
+                                }
+                                const token = blobService.generateSharedAccessSignature(STORAGE_CONTAINER, result.name, sharedAccessPolicy);
+                                const fileURLStorage = blobService.getUrl(STORAGE_CONTAINER, result.name, token, true);
+                                request(fileURLStorage, { encoding: null }, (error, response, body) => {})
+                            })
+
+
+
+
+
+
+
+
+
+
+
                             if(file_ext == 'png' || file_ext == 'PNG' || file_ext == 'jpg' || file_ext == 'jpeg' || file_ext == 'gif'){
-                                User.findOneAndUpdate({email: nickUser}, {image: file_name}, {new: true}, (err, userStored) =>{
+                                User.findOneAndUpdate({email: nickUser}, {image: rutaAzure}, {new: true}, (err, userStored) =>{
+                                })
                                     if(err) return res.status(500).send();
                                     if(!userStored) return res.status(404).send();
                                     res.status(200).send({user: userStored});
-                                });
                             }else{
                                 return removeFilesOfUpload(res, file_path, 'Extensión No Valida');
                             }
@@ -101,6 +137,7 @@ let user = new User();
                     }
                 })
             });
+
         }
     });
 },

@@ -11,9 +11,9 @@ let UserSchema = Schema({
     birthday: String,
     dateCreated: Date,
     password: String,
-    role: Boolean,
+    role: String,
     image: String,
-    status: String
+    status: Boolean
 }, { versionKey: false });
 
 module.exports = mongoose.model('User', UserSchema)

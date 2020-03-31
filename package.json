@@ -18,17 +18,20 @@
   },
   "homepage": "https://github.com/aza-martinez/socialAlce-Backend#readme",
   "dependencies": {
+    "azure-storage": "^2.10.3",
     "bcrypt-nodejs": "0.0.3",
     "bcryptjs": "^2.4.3",
     "body-parse": "^0.1.0",
     "connect-multiparty": "^2.2.0",
     "express": "^4.17.1",
+    "into-stream": "^5.1.1",
     "jsonwebtoken": "^8.5.1",
     "jwt-simple": "^0.5.6",
     "moment": "^2.24.0",
     "moment-timezone": "^0.5.28",
     "mongoose": "^5.9.5",
     "mongoose-pagination": "^1.0.0",
+    "multer": "^1.4.2",
     "nodemon": "^2.0.2",
     "validator": "^12.2.0"
   }
