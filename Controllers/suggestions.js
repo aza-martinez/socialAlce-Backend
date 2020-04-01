@@ -14,6 +14,13 @@ const STORAGE_ACCOUNT = 'socialalcestorage';
 const STORAGE_CONTAINER = 'suggestions';
 const URL_BASE_STORAGE = 'https://socialalcestorage.blob.core.windows.net/suggestions';
 
+/*ESTATUS DE LAS SUGERENCIAS
+    NEW
+    PROCESS
+    FINALIZED
+    DISCARDED
+*/
+
 var controller = {
     save: async(req, res) =>{
         Counter.findByIdAndUpdate({_id: 'suggestions'}, {$inc: { invoice: 1} }, function(error, counter)   {
@@ -29,7 +36,7 @@ var controller = {
         let fecha = new Date();
         let dateMX = moment(fecha).tz("America/Mexico_City");
         suggestion.dateCreated = dateMX._d;
-        suggestion.status = 'PENDING';
+        suggestion.status = 'NEW';
         let last_invoice = counter.invoice+1;
         suggestion.invoice = last_invoice;
         suggestion.save((error, suggestionStored) => {
@@ -66,7 +73,7 @@ var controller = {
                                         Suggestion.findOneAndUpdate({invoice: last_invoice}, {image: rutaAzure}, {new: true}, (err, suggestionStored) =>{
                                             if(err) return res.status(500).send();
                                             if(!suggestionStored) return res.status(404).send();
-                                            res.status(200).send({user: suggestionStored});
+                                            res.status(200).send({suggestion: suggestionStored});
                                         });
                                     }else{
                                         return removeFilesOfUpload(res, file_path, 'Extensión No Valida');
@@ -86,6 +93,18 @@ var controller = {
         });
         },
 
+    update: async(req, res) => {
+    let idSuggestion = req.params.idSuggestion;
+    if(req.user.role != 'ROLE_ADMIN'){
+    return res.status(500).send('NO TIENE PERMISOS');
+    }
+        let update = req.body;
+        Suggestion.findByIdAndUpdate(idSuggestion, update, {new:true}, (err, suggestionUpdate) => {
+            if(err) return res.status(500).send(err);
+            if(!suggestionUpdate) return res.status(404).send();
+            return res.status(200).send();
+        })
+    },
 
     list: async(req, res) => {
         Suggestion.find({})

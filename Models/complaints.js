@@ -4,7 +4,7 @@ let mongoose = require('mongoose');
 let Schema = mongoose.Schema;
 
 let ComplaintsSchema = Schema({
-    user: String,
+    user: { type: Schema.ObjectId, ref: "User" },
     description: String,
     justification: String,
     dateCreated: Date,

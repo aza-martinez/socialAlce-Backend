@@ -14,7 +14,12 @@ const STORAGE_ACCOUNT = 'socialalcestorage';
 const STORAGE_CONTAINER = 'complaints';
 const URL_BASE_STORAGE = 'https://socialalcestorage.blob.core.windows.net/complaints';
 
-
+/*ESTATUS DE LAS QUEJAS
+    NEW
+    PROCESS
+    FINALIZED
+    DISCARDED
+*/
 var controller = {
     save: async(req, res) =>{
         Counter.findByIdAndUpdate({_id: 'complaints'}, {$inc: { invoice: 1} }, function(error, counter)   {
@@ -31,7 +36,7 @@ var controller = {
         let dateMX = moment(fecha).tz("America/Mexico_City");
         complaint.dateCreated = dateMX._d;
         complaint.dateIncidence = params.dateIncidence;
-        complaint.status = 'PENDING';
+        complaint.status = 'NEW';
         let last_invoice = counter.invoice+1;
         complaint.invoice = last_invoice;
         complaint.save((error, complaintStored) => {
@@ -89,6 +94,19 @@ var controller = {
         });
         },
 
+
+    update: async(req, res) => {
+        let idComplaint = req.params.idComplaint;
+    if(req.user.role != 'ROLE_ADMIN'){
+    return res.status(500).send('NO TIENE PERMISOS');
+    }
+        let update = req.body;
+        Complaint.findByIdAndUpdate(idComplaint, update, {new:true}, (err, complaintUpdate) => {
+            if(err) return res.status(500).send(err);
+            if(!complaintUpdate) return res.status(404).send();
+            return res.status(200).send();
+        })
+    },
 
     list: async(req, res) => {
         Complaint.find({})

@@ -258,7 +258,6 @@ loginUser: async(req, res) => {
 },
 
 listUser: async(req, res) => {
-        req.user.sub =  undefined;
         req.user.iat = undefined;
         req.user.exp = undefined;
         return res.status(200).send(req.user);
