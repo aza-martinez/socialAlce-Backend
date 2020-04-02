@@ -42,8 +42,7 @@ var controller = {
         suggestion.save((error, suggestionStored) => {
                             if (error) return res.status(500).send();
                             if(suggestionStored){
-                                console.log(req.files.image.size);
-                                if (req.files.image.size === 0){
+                                    if (!req.files.image){
                                     rutaAzure = null;
                                     Suggestion.findOneAndUpdate({invoice: last_invoice}, {image: rutaAzure}, {new: true}, (err, suggestionStored) =>{
                                         console.log(err);
@@ -52,7 +51,7 @@ var controller = {
                                         res.status(200).send({suggestion: suggestionStored});
                                     });
                                 }
-                                if(req.files.image.size != 0){
+                                if(req.files.image){
                                     var file_path = req.files.image.path;
                                     var file_name = req.files.image.originalFilename;
                                     var extension_split = file_name.split('\.');
