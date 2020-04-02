@@ -46,6 +46,7 @@ var controller = {
                                 if (req.files.image.size === 0){
                                     rutaAzure = null;
                                     Suggestion.findOneAndUpdate({invoice: last_invoice}, {image: rutaAzure}, {new: true}, (err, suggestionStored) =>{
+                                        console.log(err);
                                         if(err) return res.status(500).send();
                                         if(!suggestionStored) return res.status(404).send();
                                         res.status(200).send({suggestion: suggestionStored});
