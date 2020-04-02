@@ -125,7 +125,7 @@ let user = new User();
                                 return removeFilesOfUpload(res, file_path, 'Extensión No Valida');
                             }
                         }else{
-                            return res.status(200).send({message: 'No Seleccionaste Archivos'});
+                            return res.status(500).send({message: 'No Seleccionaste Archivos'});
                         }
                         function removeFilesOfUpload(res, file_path, message){
                             fs.unlink(file_path, (err) => {
@@ -227,8 +227,11 @@ upload: async(req, res) => {
 },
 
 getImageFile(req, res){
-    let imageFile = req.params.imageFile;
-    let path_file = './uploads/users/'+imageFile;
+    let idUser = req.params.idUser;
+
+
+
+    let path_file = imageFile;
     fs.exists(path_file, (exist) => {
         if(exist){
             res.sendFile(path.resolve(path_file));

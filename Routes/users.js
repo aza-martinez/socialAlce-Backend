@@ -15,6 +15,6 @@ router.post('/user/login/', UsersController.login);
 router.put('/user/update/:idUser', auth.ensureAuth, UsersController.update);
 router.put('/user/delete/:idUser', auth.ensureAuth, UsersController.delete);
 router.post('/user/upload/:idUser', [auth.ensureAuth, multipartMiddleware], UsersController.upload);
-router.get('/user/getImage/:imageFile', UsersController.getImageFile);
+router.get('/user/getImage/:idUser', UsersController.getImageFile);
 
 module.exports = router;

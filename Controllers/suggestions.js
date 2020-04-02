@@ -42,7 +42,16 @@ var controller = {
         suggestion.save((error, suggestionStored) => {
                             if (error) return res.status(500).send();
                             if(suggestionStored){
-                                if(req.files){
+                                console.log(req.files.image.size);
+                                if (req.files.image.size === 0){
+                                    rutaAzure = null;
+                                    Suggestion.findOneAndUpdate({invoice: last_invoice}, {image: rutaAzure}, {new: true}, (err, suggestionStored) =>{
+                                        if(err) return res.status(500).send();
+                                        if(!suggestionStored) return res.status(404).send();
+                                        res.status(200).send({suggestion: suggestionStored});
+                                    });
+                                }
+                                if(req.files.image.size != 0){
                                     var file_path = req.files.image.path;
                                     var file_name = req.files.image.originalFilename;
                                     var extension_split = file_name.split('\.');
@@ -67,7 +76,6 @@ var controller = {
                                         }
                                         const token = blobService.generateSharedAccessSignature(STORAGE_CONTAINER, result.name, sharedAccessPolicy);
                                         const fileURLStorage = blobService.getUrl(STORAGE_CONTAINER, result.name, token, true);
-                                        request(fileURLStorage, { encoding: null }, (error, response, body) => {})
                                     })
                                     if(file_ext == 'png' || file_ext == 'PNG' || file_ext == 'jpg' || file_ext == 'jpeg' || file_ext == 'gif'){
                                         Suggestion.findOneAndUpdate({invoice: last_invoice}, {image: rutaAzure}, {new: true}, (err, suggestionStored) =>{
@@ -75,19 +83,8 @@ var controller = {
                                             if(!suggestionStored) return res.status(404).send();
                                             res.status(200).send({suggestion: suggestionStored});
                                         });
-                                    }else{
-                                        return removeFilesOfUpload(res, file_path, 'Extensión No Valida');
                                     }
-                                }else{
-                                    return res.status(200).send({message: 'No Seleccionaste Archivos'});
                                 }
-                                function removeFilesOfUpload(res, file_path, message){
-                                    fs.unlink(file_path, (err) => {
-                                        return res.status(200).send({message: message});
-                                    });
-                                }
-                            }else{
-                                res.status(400).send();
                             }
                         })
         });
