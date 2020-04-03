@@ -8,6 +8,7 @@ let fs = require ('fs');
 let path = require('path');
 var moment = require('moment-timezone');
 let mongoosePaginate = require('mongoose-pagination');var azure =  require('azure-storage');
+const complaints = require('../Models/complaints');
 
 const KEY_STORAGE = 'qxqCXxt8jH5QceYUPcECi45udcsdUlM9glFz/qwHmdvGRudsywFRoY1KNQex1gLlB6nCKvFiAM3rGK6+nQPqbg==';
 const STORAGE_ACCOUNT = 'socialalcestorage';
@@ -29,6 +30,7 @@ var controller = {
         var params = req.body;
         let complaint = new Complaint();
         complaint.user = params.user;
+        complaint.anonymous = params.anonymous;
         complaint.description = params.description;
         complaint.image = null;
         complaint.justification = params.justification;
@@ -39,54 +41,56 @@ var controller = {
         let last_invoice = counter.invoice+1;
         complaint.invoice = last_invoice;
         complaint.save((error, complaintStored) => {
-                            if (error) return res.status(500).send();
-                            if(complaintStored){
-                                if (req.files.image.size === 0){
-                                    rutaAzure = null;
-                                    Complaint.findOneAndUpdate({invoice: last_invoice}, {image: rutaAzure}, {new: true}, (err, complaintStored) =>{
-                                        if(err) return res.status(500).send();
-                                        if(!complaintStored) return res.status(404).send();
-                                        res.status(200).send({suggestion: complaintStored});
-                                    });
-                                }
-                                if(req.files.image.size != 0){
-                                    var file_path = req.files.image.path;
-                                    var file_name = req.files.image.originalFilename;
-                                    var extension_split = file_name.split('\.');
-                                    var file_ext = extension_split[1];
+            if (error) return res.status(500).send();
+            if(complaintStored){
+                    if (!req.files.image){
+                    rutaAzure = null;
+                    Complaint.findOneAndUpdate({invoice: last_invoice}, {image: rutaAzure}, {new: true}, (err, complaintStored) =>{
+                        console.log(err);
+                        if(err) return res.status(500).send();
+                        if(!complaintStored) return res.status(404).send();
+                        res.status(200).send({complaint: complaintStored});
+                    });
+                }
+                if(req.files.image){
+                    var file_path = req.files.image.path;
+                    var file_name = req.files.image.originalFilename;
+                    var extension_split = file_name.split('\.');
+                    var file_ext = extension_split[1];
 
-                                    var rutaAzure = URL_BASE_STORAGE+'/'+file_name
-                                    const blobService = azure.createBlobService(STORAGE_ACCOUNT, KEY_STORAGE);
-                                    let fileStorage = null;
-                                    const startDate = new Date();
-                                    const expiryDate = new Date(startDate);
-                                    const sharedAccessPolicy = {
-                                        AccessPolicy: {
-                                        Permissions: azure.BlobUtilities.SharedAccessPermissions.READ,
-                                        start: startDate,
-                                        Expiry: azure.date.minutesFromNow(20)
-                                        }
-                                    };
-                                    blobService.createBlockBlobFromLocalFile(STORAGE_CONTAINER, file_name , file_path, async (e, result, req) => {
-                                        if (e) {
-                                            console.log('no se guardo...')
-                                            return;
-                                        }
-                                        const token = blobService.generateSharedAccessSignature(STORAGE_CONTAINER, result.name, sharedAccessPolicy);
-                                        const fileURLStorage = blobService.getUrl(STORAGE_CONTAINER, result.name, token, true);
-                                    })
-                                    if(file_ext == 'png' || file_ext == 'PNG' || file_ext == 'jpg' || file_ext == 'jpeg' || file_ext == 'gif'){
-                                        Complaint.findOneAndUpdate({invoice: last_invoice}, {image: rutaAzure}, {new: true}, (err, complaintStored) =>{
-                                            if(err) return res.status(500).send();
-                                            if(!complaintStored) return res.status(404).send();
-                                            res.status(200).send({complaint: complaintStored});
-                                        });
-                                    }
-                                }
-                            }
-                        })
-        });
-        },
+                    var rutaAzure = URL_BASE_STORAGE+'/'+file_name
+                    const blobService = azure.createBlobService(STORAGE_ACCOUNT, KEY_STORAGE);
+                    let fileStorage = null;
+                    const startDate = new Date();
+                    const expiryDate = new Date(startDate);
+                    const sharedAccessPolicy = {
+                        AccessPolicy: {
+                        Permissions: azure.BlobUtilities.SharedAccessPermissions.READ,
+                        start: startDate,
+                        Expiry: azure.date.minutesFromNow(20)
+                        }
+                    };
+                    blobService.createBlockBlobFromLocalFile(STORAGE_CONTAINER, file_name , file_path, async (e, result, req) => {
+                        if (e) {
+                            console.log('no se guardo...')
+                            return;
+                        }
+                        const token = blobService.generateSharedAccessSignature(STORAGE_CONTAINER, result.name, sharedAccessPolicy);
+                        const fileURLStorage = blobService.getUrl(STORAGE_CONTAINER, result.name, token, true);
+                    })
+                    if(file_ext == 'png' || file_ext == 'PNG' || file_ext == 'jpg' || file_ext == 'jpeg' || file_ext == 'gif'){
+                        Complaint.findOneAndUpdate({invoice: last_invoice}, {image: rutaAzure}, {new: true}, (err, complaintStored) =>{
+                            if(err) return res.status(500).send();
+                            if(!complaintStored) return res.status(404).send();
+                            res.status(200).send({complaint: complaintStored});
+                        });
+                    }
+                }
+            }
+        })
+});
+},
+
 
 
     update: async(req, res) => {

@@ -196,33 +196,48 @@ upload: async(req, res) => {
     if(req.user.role != 'ROLE_ADMIN' && idUser != req.user.sub){
         return res.status(500).send('NO TIENE PERMISOS');
     }
-    if(req.files){
-        console.log(req.files);
-        let file_path = req.files.image.path;
-        let file_split = file_path.split('\\');
-        let  file_name = file_split[2];
-        let ext_split = file_name.split('\.');
-        let file_ext = ext_split[1];
-
-        if(idUser != req.user.sub){
-            return removeFilesOfUpload(res, file_path, 'Usuario Sin Permisos');
-        }
-        if(file_ext == 'png' || file_ext == 'PNG' || file_ext == 'jpg' || file_ext == 'jpeg' || file_ext == 'gif'){
-            User.findByIdAndUpdate(idUser, {image: file_name}, {new: true}, (err, userUpdate) =>{
-                if(err) return res.status(500).send();
-                if(!userUpdate) return res.status(404).send();
-                return res.status(200).send({user: userUpdate});
-            });
-        }else{
-            return removeFilesOfUpload(res, file_path, 'Extensión No Valida');
-        }
-    }else{
-        return res.status(200).send({message: 'No Seleccionaste Archivos'});
-    }
-    function removeFilesOfUpload(res, file_path, message){
-        fs.unlink(file_path, (err) => {
-            return res.status(200).send({message: message});
+    if (!req.files.image){
+        rutaAzure = null;
+        User.findOneAndUpdate({_id: idUser}, {image: rutaAzure}, {new: true}, (err, userUpload) =>{
+            console.log(err);
+            if(err) return res.status(500).send();
+            if(!userUpload) return res.status(404).send();
+            res.status(200).send({user: userUpload.image});
         });
+    }
+    if(req.files.image){
+        var file_path = req.files.image.path;
+        var file_name = req.files.image.originalFilename;
+        var extension_split = file_name.split('\.');
+        var file_ext = extension_split[1];
+
+        var rutaAzure = URL_BASE_STORAGE+'/'+file_name
+        const blobService = azure.createBlobService(STORAGE_ACCOUNT, KEY_STORAGE);
+        let fileStorage = null;
+        const startDate = new Date();
+        const expiryDate = new Date(startDate);
+        const sharedAccessPolicy = {
+            AccessPolicy: {
+            Permissions: azure.BlobUtilities.SharedAccessPermissions.READ,
+            start: startDate,
+            Expiry: azure.date.minutesFromNow(20)
+            }
+        };
+        blobService.createBlockBlobFromLocalFile(STORAGE_CONTAINER, file_name , file_path, async (e, result, req) => {
+            if (e) {
+                console.log('no se guardo...')
+                return;
+            }
+            const token = blobService.generateSharedAccessSignature(STORAGE_CONTAINER, result.name, sharedAccessPolicy);
+            const fileURLStorage = blobService.getUrl(STORAGE_CONTAINER, result.name, token, true);
+        })
+        if(file_ext == 'png' || file_ext == 'PNG' || file_ext == 'jpg' || file_ext == 'jpeg' || file_ext == 'gif'){
+            User.findOneAndUpdate({_id: idUser}, {image: rutaAzure}, {new: true}, (err, userUpload) =>{
+                if(err) return res.status(500).send();
+                if(!userUpload) return res.status(404).send();
+                res.status(200).send({user: userUpload.image});
+            });
+        }
     }
 },
 

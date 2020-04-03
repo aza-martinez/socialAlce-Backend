@@ -11,6 +11,7 @@ let ComplaintsSchema = Schema({
     dateIncidence: String,
     image: String,
     status: String,
+    anonymous: Boolean,
     invoice: Number
 }, { versionKey: false });
 
