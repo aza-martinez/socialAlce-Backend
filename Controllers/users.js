@@ -276,9 +276,18 @@ loginUser: async(req, res) => {
 },
 
 listUser: async(req, res) => {
-        req.user.iat = undefined;
-        req.user.exp = undefined;
-        return res.status(200).send(req.user);
+    User.find({_id: req.user.sub})
+    .sort([['date', 'descending']])
+    .exec((err, users) => {
+            if (err) {
+                return res.status(500).send({err});
+            }
+            if (!users || users.length <= 0) {
+                return res.status(200).send('SIN USUARIOS');
+            }
+            users.password = undefined;
+            return res.status(200).send(users);
+        });
 },
 
 list: async(req, res) => {
